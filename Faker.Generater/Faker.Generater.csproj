@@ -77,6 +77,7 @@
   <ItemGroup>
     <Compile Include="Class1.cs" />
     <Compile Include="CustomerChurnGenerator.cs" />
+    <Compile Include="HealthcarePredictionGenerator.cs" />
     <Compile Include="LoginUser.cs" />
     <Compile Include="LoginUserGenerator.cs" />
     <Compile Include="MovieRecommendationGenerator.cs" />
@@ -85,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="HealthcarePredictionGenerator_Documentation.markdown" />
     <None Include="SalesForecastingGenerator_Documentation.markdown" />
     <None Include="CustomerChurnGenerator_Documentation.markdown" />
     <None Include="LoginUserGenerator_Documentation.markdown" />
