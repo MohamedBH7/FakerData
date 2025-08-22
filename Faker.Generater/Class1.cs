@@ -51,6 +51,8 @@ namespace Faker.Generater
 
             var salesdata = SalesForecastingGenerator.GenerateData(1);
 
+            var healthdata = HealthcarePredictionGenerator.GenerateData(1);
+
 
 
 
