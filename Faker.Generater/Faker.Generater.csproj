@@ -81,9 +81,11 @@
     <Compile Include="LoginUserGenerator.cs" />
     <Compile Include="MovieRecommendationGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SalesForecastingGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="SalesForecastingGenerator_Documentation.markdown" />
     <None Include="CustomerChurnGenerator_Documentation.markdown" />
     <None Include="LoginUserGenerator_Documentation.markdown" />
     <None Include="MovieRecommendationGenerator_Documentation.markdown" />

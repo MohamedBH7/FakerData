@@ -47,7 +47,9 @@ namespace Faker.Generater
             // Print Movies Table
             PrintMoviesTable(movies);
 
-            var customerturns = CustomerChurnGenerator.GenerateData(1);
+            var customerturns = CustomerChurnGenerator.GenerateData(0);
+
+            var salesdata = SalesForecastingGenerator.GenerateData(1);
 
 
 
