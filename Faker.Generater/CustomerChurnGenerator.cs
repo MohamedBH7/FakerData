@@ -7,15 +7,14 @@ namespace Faker.Generater
     /// <summary>
     /// Generates synthetic Customer Churn data for ML classification tasks.
     /// </summary>
-    /// CustomerChurnGenerator_Documentation.markdown
     public static class CustomerChurnGenerator
     {
         private static readonly Random _random = new Random();
-        private static readonly string[] Genders = { "Male", "Female" };
-        private static readonly string[] Countries = {
+        private static readonly string[] DefaultGenders = { "Male", "Female" };
+        private static readonly string[] DefaultCountries = {
             "USA", "UK", "Canada", "Germany", "France", "Bahrain", "UAE", "India", "Australia", "Egypt"
         };
-        private static readonly string[] SubscriptionPlans = { "Basic", "Standard", "Premium" };
+        private static readonly string[] DefaultSubscriptionPlans = { "Basic", "Standard", "Premium" };
 
         public class CustomerChurn
         {
@@ -29,21 +28,49 @@ namespace Faker.Generater
             public bool Churned { get; set; }
         }
 
-        public static List<CustomerChurn> GenerateData(int count = 100)
+        public static List<CustomerChurn> GenerateData(
+            int count = 100,
+            int minAge = 18,
+            int maxAge = 70,
+            string[] genders = null,
+            string[] countries = null,
+            string[] subscriptionPlans = null,
+            decimal minMonthlySpend = 10m,
+            decimal maxMonthlySpend = 110m,
+            (DateTime Start, DateTime End) lastLoginRange = default,
+            double churnRate = 0.3)
         {
+            // Use default values if null
+            genders = genders?.Length > 0 ? genders : DefaultGenders;
+            countries = countries?.Length > 0 ? countries : DefaultCountries;
+            subscriptionPlans = subscriptionPlans?.Length > 0 ? subscriptionPlans : DefaultSubscriptionPlans;
+
+            // Set default login range if not provided
+            if (lastLoginRange == default)
+            {
+                lastLoginRange = (DateTime.Now.AddYears(-1), DateTime.Now);
+            }
+
+            // Validate inputs
+            if (count < 0) throw new ArgumentException("Count must be non-negative.", nameof(count));
+            if (minAge < 0 || maxAge < minAge) throw new ArgumentException("Invalid age range.", nameof(minAge));
+            if (minMonthlySpend < 0 || maxMonthlySpend < minMonthlySpend) throw new ArgumentException("Invalid monthly spend range.", nameof(minMonthlySpend));
+            if (lastLoginRange.End < lastLoginRange.Start) throw new ArgumentException("Invalid login date range.", nameof(lastLoginRange));
+            if (churnRate < 0 || churnRate > 1) throw new ArgumentException("Churn rate must be between 0 and 1.", nameof(churnRate));
+
             var data = new List<CustomerChurn>();
             for (int i = 0; i < count; i++)
             {
                 data.Add(new CustomerChurn
                 {
                     CustomerID = Guid.NewGuid(),
-                    Age = _random.Next(18, 70),
-                    Gender = Genders[_random.Next(Genders.Length)],
-                    Country = Countries[_random.Next(Countries.Length)],
-                    SubscriptionPlan = SubscriptionPlans[_random.Next(SubscriptionPlans.Length)],
-                    MonthlySpend = Math.Round((decimal)(_random.NextDouble() * 100 + 10), 2),
-                    LastLoginDate = RandomDate(DateTime.Now.AddYears(-1), DateTime.Now),
-                    Churned = _random.NextDouble() > 0.7 // ~30% churn rate
+                    Age = _random.Next(minAge, maxAge + 1),
+                    Gender = genders[_random.Next(genders.Length)],
+                    Country = countries[_random.Next(countries.Length)],
+                    SubscriptionPlan = subscriptionPlans[_random.Next(subscriptionPlans.Length)],
+                    MonthlySpend = Math.Round((decimal)(_random.NextDouble() * (double)(maxMonthlySpend - minMonthlySpend) + (double)minMonthlySpend), 2),
+                    LastLoginDate = RandomDate(lastLoginRange.Start, lastLoginRange.End),
+                    Churned = _random.NextDouble() < churnRate
                 });
             }
             return data;
