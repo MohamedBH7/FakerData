@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Faker.Generater</id>
+    <version>1.0.2</version>
+    <title>Faker Generater Library</title>
+    <authors>Mohaemd Alsaffar</authors>
+    <owners>it.alsaffar</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Faker Generater library for data simulation and predictions.</description>
+    <tags>faker data generator churn prediction</tags>
+    <dependencies>
+      <dependency id="System.Text.Json" version="9.0.0" />
+    </dependencies>
+      <readme>README.md</readme>
+  </metadata>
+  <files>
+    <file src="bin\Release\Faker.Generater.dll" target="lib\net472" />
+        <file src="README.md" target="" />
+  </files>
+</package>
