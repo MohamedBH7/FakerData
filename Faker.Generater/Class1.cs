@@ -27,7 +27,7 @@ namespace Faker.Generater
                 specificCountry: "Bahrain",
                 includePhone: true,
                 minDateCreated: new DateTime(2024, 1, 1),
-                maxDateCreated: DateTime.Now,
+                maxDateCreated: new DateTime(2025, 8, 22, 20, 49, 0), // Updated to current date and time
                 emailDomain: "company.com"
             );
 
@@ -60,7 +60,7 @@ namespace Faker.Generater
                 subscriptionPlans: new[] { "Basic", "Premium" }, // Only Basic and Premium plans to simplify analysis
                 minMonthlySpend: 15m, // Minimum spend of $15 to reflect realistic subscription costs
                 maxMonthlySpend: 150m, // Maximum spend of $150 to include premium users
-                lastLoginRange: (new DateTime(2024, 6, 1), DateTime.Now), // Last login from June 2024 to now for recent activity
+                lastLoginRange: (new DateTime(2024, 6, 1), new DateTime(2025, 8, 22, 20, 49, 0)), // Updated to current date and time
                 churnRate: 0.4 // 40% churn rate to simulate a challenging retention scenario
             );
 
@@ -70,7 +70,7 @@ namespace Faker.Generater
             // Generate Sales Data
             var salesData = SalesForecastingGenerator.GenerateData(
                 count: 5, // Generate 5 records for a small, manageable dataset to demonstrate
-                dateRange: (new DateTime(2024, 1, 1), DateTime.Now), // Sales from Jan 2024 to now for recent trends
+                dateRange: (new DateTime(2024, 1, 1), new DateTime(2025, 8, 22, 20, 49, 0)), // Sales from Jan 2024 to August 22, 2025, 20:49
                 stores: new[] { "StoreX", "StoreY" }, // Two stores to focus on specific retail locations
                 products: new[] { "ItemA", "ItemB", "ItemC" }, // Three products to simulate a small product catalog
                 minPrice: 10m, // Minimum price of $10 to reflect affordable items
@@ -102,58 +102,165 @@ namespace Faker.Generater
 
             // Ask user if they want to export
             if (users.Count == 0 && movies.Count == 0 && customerChurns.Count == 0 && salesData.Count == 0 && healthData.Count == 0)
+            {
+                Console.WriteLine("No data to export.");
                 return;
+            }
+
             Console.Write("Do you want to export the data? (y/n): ");
             var exportChoice = Console.ReadLine()?.Trim().ToLower();
 
             if (exportChoice == "y")
             {
-                Console.Write("Enter export folder path (press Enter for default 'Exports' folder): ");
-                string folderPath = Console.ReadLine()?.Trim();
+                // Prompt user to select tables
+                Console.WriteLine("\nSelect tables to export (enter numbers separated by commas, e.g., 1,2,3):");
+                Console.WriteLine("1: Users");
+                Console.WriteLine("2: Movies");
+                Console.WriteLine("3: Customer Churn");
+                Console.WriteLine("4: Sales Data");
+                Console.WriteLine("5: Healthcare Data");
+                Console.Write("Your selection: ");
+                var tableSelection = Console.ReadLine()?.Trim();
 
+                // Parse selected tables
+                var selectedTables = new List<(string Name, object Data, int RecordCount)>();
+                var selections = tableSelection?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => int.TryParse(s, out _))
+                    .Select(int.Parse)
+                    .Distinct()
+                    .ToList() ?? new List<int>();
+
+                if (selections.Count == 0)
+                {
+                    Console.WriteLine("❌ No valid tables selected. No export performed.");
+                    return;
+                }
+
+                foreach (var selection in selections)
+                {
+                    switch (selection)
+                    {
+                        case 1:
+                            if (users.Count > 0) selectedTables.Add(("Users", users, users.Count));
+                            break;
+                        case 2:
+                            if (movies.Count > 0) selectedTables.Add(("Movies", movies, movies.Count));
+                            break;
+                        case 3:
+                            if (customerChurns.Count > 0) selectedTables.Add(("Customer Churn", customerChurns, customerChurns.Count));
+                            break;
+                        case 4:
+                            if (salesData.Count > 0) selectedTables.Add(("Sales Data", salesData, salesData.Count));
+                            break;
+                        case 5:
+                            if (healthData.Count > 0) selectedTables.Add(("Healthcare Data", healthData, healthData.Count));
+                            break;
+                        default:
+                            Console.WriteLine($"⚠️ Invalid selection '{selection}' ignored.");
+                            break;
+                    }
+                }
+
+                if (selectedTables.Count == 0)
+                {
+                    Console.WriteLine("❌ No valid tables with data selected. No export performed.");
+                    return;
+                }
+
+                // Prompt for folder path
+                Console.Write("\nEnter export folder path (press Enter for default 'Exports' folder): ");
+                string folderPath = Console.ReadLine()?.Trim();
                 if (string.IsNullOrWhiteSpace(folderPath))
                 {
                     folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Exports");
                 }
-
-                // Create folder if not exists
                 Directory.CreateDirectory(folderPath);
 
-                Console.Write("Choose format: (1) JSON (2) XML (3) CSV: ");
+                // Prompt for format
+                Console.Write("\nChoose format: (1) JSON (2) XML (3) CSV: ");
                 var formatChoice = Console.ReadLine()?.Trim();
+                string format = formatChoice switch
+                {
+                    "1" => "JSON",
+                    "2" => "XML",
+                    "3" => "CSV",
+                    _ => null
+                };
 
-                if (formatChoice == "1")
+                if (format == null)
                 {
-                    ExportToJson(users, Path.Combine(folderPath, "Users.json"));
-                    ExportToJson(movies, Path.Combine(folderPath, "Movies.json"));
-                    ExportToJson(customerChurns, Path.Combine(folderPath, "CustomerChurn.json"));
-                    ExportToJson(salesData, Path.Combine(folderPath, "SalesData.json"));
-                    ExportToJson(healthData, Path.Combine(folderPath, "HealthData.json"));
-                    Console.WriteLine($"✅ Data exported to JSON files in: {folderPath}");
+                    Console.WriteLine("❌ Invalid format choice. No export performed.");
+                    return;
                 }
-                else if (formatChoice == "2")
+
+                // Display export summary
+                Console.WriteLine("\nExport Summary:");
+                Console.WriteLine(new string('-', 80));
+                Console.WriteLine($"| {"Table",-20} | {"Records",-10} | {"Estimated Size",-15} | {"File Name",-25} |");
+                Console.WriteLine(new string('-', 80));
+
+                long totalSize = 0;
+                foreach (var table in selectedTables)
                 {
-                    ExportToXml(users, Path.Combine(folderPath, "Users.xml"));
-                    ExportToXml(movies, Path.Combine(folderPath, "Movies.xml"));
-                    ExportToXml(customerChurns, Path.Combine(folderPath, "CustomerChurn.xml"));
-                    ExportToXml(salesData, Path.Combine(folderPath, "SalesData.xml"));
-                    ExportToXml(healthData, Path.Combine(folderPath, "HealthData.xml"));
-                    Console.WriteLine($"✅ Data exported to XML files in: {folderPath}");
+                    int bytesPerRecord = format switch
+                    {
+                        "JSON" => 200, // Approx 200 bytes per record
+                        "XML" => 300,  // Approx 300 bytes per record
+                        "CSV" => 100   // Approx 100 bytes per record
+                    };
+                    long estimatedSize = table.RecordCount * bytesPerRecord;
+                    totalSize += estimatedSize;
+                    string fileName = $"{table.Name.Replace(" ", "")}.{format.ToLower()}";
+                    Console.WriteLine($"| {table.Name,-20} | {table.RecordCount,-10} | {FormatSize(estimatedSize),-15} | {fileName,-25} |");
                 }
-                else if (formatChoice == "3")
+                Console.WriteLine(new string('-', 80));
+                Console.WriteLine($"Total Files: {selectedTables.Count}");
+                Console.WriteLine($"Total Estimated Size: {FormatSize(totalSize)}");
+                Console.WriteLine(new string('-', 80));
+
+                // Confirm export
+                Console.Write("\nProceed with export? (y/n): ");
+                if (Console.ReadLine()?.Trim().ToLower() != "y")
                 {
-                    ExportToCsv(users, Path.Combine(folderPath, "Users.csv"));
-                    ExportToCsv(movies, Path.Combine(folderPath, "Movies.csv"));
-                    ExportToCsv(customerChurns, Path.Combine(folderPath, "CustomerChurn.csv"));
-                    ExportToCsv(salesData, Path.Combine(folderPath, "SalesData.csv"));
-                    ExportToCsv(healthData, Path.Combine(folderPath, "HealthData.csv"));
-                    Console.WriteLine($"✅ Data exported to CSV files in: {folderPath}");
+                    Console.WriteLine("❌ Export cancelled.");
+                    return;
                 }
-                else
+
+                // Perform export
+                foreach (var table in selectedTables)
                 {
-                    Console.WriteLine("❌ Invalid choice. No export performed.");
+                    string fileName = $"{table.Name.Replace(" ", "")}.{format.ToLower()}";
+                    string filePath = Path.Combine(folderPath, fileName);
+                    switch (format)
+                    {
+                        case "JSON":
+                            ExportToJson(table.Data, filePath);
+                            break;
+                        case "XML":
+                            ExportToXml(table.Data, filePath);
+                            break;
+                        case "CSV":
+                            ExportToCsv(table.Data, filePath);
+                            break;
+                    }
                 }
+
+                Console.WriteLine($"\n✅ {selectedTables.Count} file(s) exported to: {folderPath}");
             }
+        }
+
+        static string FormatSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double size = bytes;
+            int order = 0;
+            while (size >= 1024 && order < sizes.Length - 1)
+            {
+                size /= 1024;
+                order++;
+            }
+            return $"{size:0.##} {sizes[order]}";
         }
 
         static void PrintUsersTable(List<LoginUser> users)
@@ -225,8 +332,7 @@ namespace Faker.Generater
                 Console.WriteLine("SALES DATA TABLE");
                 Console.WriteLine(new string('-', 120));
                 Console.WriteLine($"| {"Date",-20} | {"StoreID",-10} | {"ProductID",-10} | {"Price",-10} | {"QuantitySold",-12} | {"TotalRevenue",-12} |");
-                Console.WriteLine(new string('-', 120));
-
+                Console.WriteLine(new string('-', roadside
                 foreach (var sale in salesData)
                 {
                     Console.WriteLine(
@@ -275,7 +381,7 @@ namespace Faker.Generater
 
         static void ExportToCsv<T>(List<T> data, string filePath)
         {
-            var sb =  new StringBuilder();
+            var sb = new StringBuilder();
             var props = typeof(T).GetProperties();
 
             // Header
